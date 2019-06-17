@@ -1,19 +1,21 @@
 # 章节2：logback 体系结构
 
+原文链接：[Chapter 2: Architecture](https://logback.qos.ch/manual/architecture.html)
+
 > 所有正确的分类都是族谱结构的。
 > 
 > --《物种起源》查尔斯·达尔文
 > 
-> 任何人在学习一门学科的时候如果仅仅是指阅读学习一些资料而不把他们应用到
-> 一些实际问题的解决上而仅仅是强迫他们自己去思考他们在学什么，不是说不可能做到，但是要做到这点是非常困难的。因此，我们所学到的最好的知识就是我们自己在问题中发现总结的。
+> 任何人在学习一门学科的时候如果仅仅是只阅读学习一些资料而不把他们应用到
+> 一些实际问题的解决上，而仅仅是强迫他们自己去思考他们在学什么，想要把这些知识学会不是说不可能做到，而是要做到这点是非常困难的。因此，我们所学到的最好的知识就是我们自己发现、总结的。
 > 
 > -- 《计算机程序设计艺术》
 > 
 
 ## logback 的体系结构
 
-Logback 的基础体系结构足够通用，因此它能够适用在任何不同环境中。目前
-logback 被划分为3个模块： logback-core、logback-classic、logback-access。
+`logback` 的基础体系结构足够通用，因此它能够适用在不同情况中。目前
+`logback` 被划分为3个模块： `logback-core`、`logback-classic`、l`ogback-access`。
 
 核心模块为其他两个模块奠定了基础。classic 模块扩展了 core 模块功能，并且 classic 模块可以算是一个 log4j 的显著改进版本。 logback-classic 自然的实现了 SLF4J API，因此你可以自由的在 logback 和其他日志系统(如log4j 或者是 JDK 1.4 中引入的 java.util.logging)中切换.access模块用来是 Servlet 容器集成可以提供 HTTP-access日志功能。后面有单独的文档介绍 access 模块。
 
@@ -25,7 +27,7 @@ Logback 的三个核心类： Logger, Appender 和 Layout。这三个组件协�
 
 Logger 类是 logback-classic 模块的一部分。换句话说， Appender 和 Layout 接口是 logback-core 模块的一部分，做一个通用的基础模块， logback-core 是没有 logger 的概念的。
 
-## Logger 上下文
+### Logger 上下文
 
 首先，任何日志API相对 System.out.println 最重要的优势就是，日志API允许禁止某些日志输出的同时允许其他一些日志不受阻碍。这个功能假定，开发人员可以根据自己的标准来选择日志空间（日志空间就是所有可能的日志语句）。在 logback-classic 模块中，分类功能是 logger 的一部分固有功能。每个 logger 都会附加到一个 LoggerContext 中， LoggerContext 用来创建 Logger 并把 logger 组织为一个树形的层次结构。
 
@@ -62,7 +64,7 @@ public interface Logger {
 }
 ```
 
-## 有效的 level 又称为 level 继承
+### 有效的 level 又称 level 继承
 
 Loggers 是可以被分配 level 的。可用的 levels（TRACE, DEBUG, INFO, WARN 和 ERROR）定义在 ch.qos.logback.classic.Level 类中。
 需要注意的是，在logback中。 Level 类是 final 的不能被继承，不能有子类。Level 会作为一种更灵活的形式存在于被标记的对象中。
@@ -116,7 +118,7 @@ exampl 3 中 logger root，X和 X.Y.Z 分别指定了 DEBUG、INFO、ERROR 级�
 
 example 4 中，loggers root 和 X 分别指定了 DEBUG 和 INFO 的 level， loggers X.Y 和 X.Y.Z 从 X 中继承了 level；
 
-## 打印方法和级别选择规则
+### 打印方法和级别选择规则
 
 通过定义来说，打印方法决定了一个 logger 需要的 level。比如一个 L 是一个 logger 实例，那么打印语句`L.info("...")` 需要 L 的 level 为 INFO。
 
@@ -168,7 +170,7 @@ barlogger.debug("Exiting gas station search");
 ```
 
 
-## 检索 Loggers
+### 检索 Loggers
 
 调用 LoggerFactory.getLogger 方法，只要 logger 的 name 相同，那么这个方法总会返回同一个对象。
 
@@ -189,7 +191,7 @@ x 和 y 会引用同一个对象。
 
 不过，以 logger 所在的类命名 logger 似乎是迄今为止所知的最佳通用策略。
 
-## Appenders 和 Layouts
+### Appenders 和 Layouts
 
 根据日志程序选择性地启用或禁用日志记录请求的功能只是一部分。Logback允许将日志请求打印到多个目的地。在logback中，日志 output 的目的地称为 appender。目前，logback 提供了下列 appender ： 到 console、文件、远程 socket servers、MySQL、PostgreSQL、Oracle和其他数据库、JMS和远程 UNIX Syslog daemos。
 
