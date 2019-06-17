@@ -39,6 +39,6 @@
 - 再后来 `Apache` 宣布放弃了放弃 `Log4j` 推荐大家使用 `Log4j2`;
 - 然后 `Ceki` 宣布创建了 `logback` 并宣称 `logback` 是 `log4j` 的继任者；
 
-> 相比 `log4j` 和 `logback` , `log4j2` 名气不大，它基本上把 `log4j` 的内核全部重写了。
+> 相比 `log4j` 和 `logback` , `log4j2` 名气不大，它源自 `log4j` 但是，它基本上把 `log4j` 的内核全部重写了。
 
 
