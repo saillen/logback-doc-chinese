@@ -7,19 +7,18 @@
 
 ## 什么是 logback？
 
-`logback` 是 `log4j` 的继任者。`log4j` 的发明者创造了 `logback`。作者利用十多年的工业级日志系统设计经验创造了 `logback`。 `logback` 比目前现存的所有日志系统都要更快更轻量。logback 提供了很多其他日志系统没有的非常有用的特性。
+`logback` 是 `log4j` 的继任者。`log4j` 的发明者创造了 `logback`。作者利用十多年的工业级日志系统设计经验创造了 `logback`。 `logback` 比目前现存的所有日志系统要`更快`、`更轻量`。`logback` 提供了很多其他日志系统没有的非常有用的特性。
 
 ## 迈出第一步
-
-> 为了确保能运行本章的示例，你需要确保你已经正确下载并配置了（就是把logback的jar加入到classpath）相关jar包。如果你还没做，可以去安装页面了解更多内容。
-
 ### 必须的jar
 
-`Logback-classic` 模块依赖 `slf4j-api.jar` 和 `logback-core.jar`.
+`logback-classic` 模块依赖 `slf4j-api.jar` 和 `logback-core.jar`.
 
-`logback-*.jar` 文件是 logback 发行版的一部分，然而 `slf4j-api-1.8.0-beta1.jar` 是 `SLF4J` 的一部分，他们是两个项目。
+`logback-*.jar` 文件是 `logback` 发行版的一部分，然而 `slf4j-api-1.8.0-beta1.jar` 是 `SLF4J` 的一部分，他们是两个项目。
 
-ok，现在让我们来体验下 logback。
+ok，现在让我们来体验下 `logback`。
+
+> 为了确保能运行本章的示例，你需要确保你已经正确下载并配置了（就是把logback的jar加入到classpath）相关jar包。如果你还没做，可以去安装页面了解更多内容。
 
 ##### Example 1.1: Basic template for logging
 
@@ -41,11 +40,11 @@ public class HelloWorld1 {
 
 ```
 
-类 `HelloWord1` 定义在 `chapters.introduction` 包下.它先引入了 `org.slf4j` 包下的两个 API：`Logger` 和 `LoggerFactory` 类，这两个类属于 `SL4FJ` 的 API。
+类 `HelloWord1` 定义在 `chapters.introduction` 包下。它先引入了 `org.slf4j` 包下的两个类：`Logger` 和 `LoggerFactory` 类，这两个类属于 `SL4FJ` 的 API。
 
-main() 方法的第一行， 通过调用 LoggerFactory 的静态方法 getLogger 我们为 logger 变量分配了一个 Logger 实例。 这个 logger 的名字叫做："chapters.introduction.HelloWorld1"。接下来，我们将"Hello World" 作为参数传递给了 logger 的 debug 方法。因此我们说：**main方法含有一个带有"Hello World"消息的、DEBUG 级别的日志语句**。
+`main()` 方法的第一行， 通过调用 `LoggerFactory` 的静态方法 `getLogger()` 我们为 logger 变量分配了一个 `Logger` 实例。 这个 logger 的名字叫做："chapters.introduction.HelloWorld1"。接下来，我们将"Hello World" 作为参数传递给了 logger 的 `debug` 方法。因此我们说：**main方法含有一个带有"Hello World"消息的、DEBUG 级别的日志语句**。
 
-注意：上面的例子并没用使用到 logback 的类。就日志记录而言，绝大部分的情况，你只需要引入 SLF4J 的类即可。一般情况下（当然不是所有情况），你的类只需要使用 SLF4J 的 API 即可，不需要感知 logback 的存在。
+注意：上面的例子并没用使用到 `logback` 的类。就日志记录而言，绝大部分的情况，你只需要引入 `SLF4J` 的类即可。一般情况下（当然不是所有情况），你的类只需要使用 `SLF4J` 的 API 即可，不需要感知 `logback` 的存在。
 
 你可以在命令行中运行下第一个例子：
 
@@ -53,7 +52,7 @@ main() 方法的第一行， 通过调用 LoggerFactory 的静态方法 getLogge
 java chapters.introduction.HelloWorld1
 ```
 
-运行完成后，你会在控制条看到下面的输出消息。logback 的默认配置策略就是：**如果找不到默认的配置文件，logback会向 root logger 中添加 ConsoleAppender **
+运行完成后，你会在控制条看到下面的输出消息。`logback` 的默认配置策略就是：**如果找不到默认的配置文件，logback会向 root logger 中添加 ConsoleAppender **
 
 ```
 20:49:07.962 [main] DEBUG chapters.introduction.HelloWorld1 - Hello world.
