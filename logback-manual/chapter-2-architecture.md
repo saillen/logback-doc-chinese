@@ -230,4 +230,125 @@ addAppender 方法允许将一个 appender 添加到一个 logger上。每个有
 
 第一个字段（即 %-4relative）表示的是自程序启动依赖花费的毫秒数。第二个字段（即[thread]）表示的是打印日志的线程。第三个字段(即 %-5level)是日志等级。第四个字段（即%logger{32}）表示的是logger的name. '-' 后面的信息输出的是日志内容。
 
+## 参数化日志
 
+`logback-classic` 中的 logger 实现了 `SLF4J` 的日志接口。logger 接口提供了多重重载的日志打印方法。这些重载方法主要目的是在不影响代码可读性的前提下提升代码性能。
+
+一些开发人员可能会有如下日志代码写法：
+
+```java
+logger.debug("Entry number: " + i + " is " + String.valueOf(entry[i]));
+```
+
+上面的代码会产生构造方法参数的开销，这些开销包括：将 integer 的 i 和 entry[i] 转换为 String 类型，以及字符串拼接代价。而这个代价是和日志打印无关的，即即使日志不输出也需要承担这些时间花费。
+
+一种可行的避免参数构造的时间花费的方式是，使用 log 状态判断语句包裹整个输出语句，类似：
+
+```
+if(logger.isDebugEnabled()) { 
+  logger.debug("Entry number: " + i + " is " + String.valueOf(entry[i]));
+}
+```
+
+上面的方法当不需要输出 debug 级别的日志的时候是不需要承担参数构造的代码的。另一方面，当你需要输出 debug 级别的日志的时候，则需要花费两次时间来评估是否启用了 debug 级别的日志：一次在在 debugEnabled 方法，另一次在 debug 方法中。在实践中，这种开销是微不足道的，因为评估一个 logger 级别的时间花费不到处理一个请求所需的时间的1%。
+
+## 更好的选择
+
+当前存在一种基于消息格式化的、方便的替代选择。假设entry是一个对象，可以这样写:
+
+```
+Object entry = new SomeObject(); 
+logger.debug("The entry is {}.", entry);
+```
+
+
+只有在评估日志记录是否需要输出之后，而且只有当决定输出日志时，logger 的实现类才会格式化消息，并用 entry 的字符串值替换“{}”对。换句话说，当 log 语句不需要输出时，此方法不会产生参数构造的成本。
+
+下面两行代码将产生完全相同的输出。然而，在禁用日志语句的情况下，第二种方法的性能至少比第一种好30倍。
+
+```
+logger.debug("The new entry is "+entry+".");
+logger.debug("The new entry is {}.", entry);
+```
+
+logger 还提供了含有两个2参数的重载方法，比如：
+
+```
+logger.debug("The new entry is {}. It replaces {}.", entry, oldEntry);
+```
+
+如果需要格式化3个或者更多参数时，可以使用一个 Object[] 作为参数，比如：
+
+```
+Object[] paramArray = {newVal, below, above};
+logger.debug("Value {} was inserted between {} and {}.", paramArray);
+
+```
+
+# 揭开内部奥秘
+
+我们已经介绍了 `logback` 的重要组件，现在我们将介绍下当用户调用 logger 的日志打印方法时，`logback` 框架的处理步骤。现在让我们分析下，当用户调用一个名字为 “com.wombat” 的 logger 的 info() 方法时的处理步骤。
+
+## 1. 获取 filter 链
+如果配置了 `TurboFilter` ，那么会先调用 `TurboFilter`。 `TurboFilter` 可以设置一个上下文范围内的阈值，或者根据与每个日志请求关联的 `Marker`、`Level`、`message` 或 `Throwable` 等信息过滤掉某些事件（事件就是日志输出请求）。如果 filter 链返回了 `FilterReply.DENY` ，那么日志输出请求会被丢弃。如果返回了 `FilterReply.NEUTRAL` 会继续进入到 步骤2中。如果返回了 `FilterReply.ACCEPT`, 会直接进入到第3步进行处理。
+
+## 2. 应用基本选择规则
+在这一步中，`logback` 会比较 logger 的有效日志级别和日志输出请求的级别.如果日志输出请求被禁用，`logback` 会丢掉日志请求。否则，会进入到下一步处理。
+
+## 3. 创建一个 LoggingEvent 对象
+如果日志输出请求通过了前面的过滤，logback会创建一个 `ch.qos.logback.classic.LoggingEvent` 对象，这个对象包含了请求相关的参数，如 logger 对象，`level`、`message`、`exception`、`当前时间`、`当前的线程`、`class相关的各种数据`、`MDC`。注意，前面提到的某些信息是延迟初始化的，它们仅在需要的时候才会被解析。`MDC` 用来装饰日志请求的附加信息。关于 `MDC` 的更多信息会在后面的章节讨论。
+
+## 4. 调用 Appenders
+当创建了 `LoggingEvent` 对象后，`logback` 会调用当前 logger 从上下文中继承的各种 appender 的 `doAppend()` 方法。
+
+`logback` 发行版发布的所有 appender 都继承自 `AppenderBase` 抽象类，这个类的 `doAppend` 方法是 `synchronized` 的，它保证了 `doAppend` 的线程安全性。
+`AppenderBase` 的 `doAppend` 方法还会调用那些动态附加到它上面的各种自定义的 filters ，后面的章节会单点介绍。
+  
+## 5. 格式化输出
+appender 有责任去格式化日式输出事件。然而，一些appender（不是所有的）会把日志格式化委托给一个 layout。layout 会把 `LoggingEvent` 实例格式化并返回一个 `String` 信息。注意，有一些 appender ，比如 `SocketAppender` ，它不会将日志事件格式化为一个 string 而是会序列化它，因此，他们也不需要 layout。
+
+## 6.输出 LoggingEvent
+当日志事件被格式化后，它会被发送到 appender 的目的地。
+
+下面的 UML 图展示了每一步的工作。
+
+![](images/underTheHoodSequence.gif)
+
+# 性能
+
+反对日志输出的人经常引用的一个问题，就是日志输出的成本。这是一个合理的问题，因为即使是中等大小的应用程序也可能生成数千个日志请求。我们的大部分开发工作都花在度量和调整 `logback` 的性能上。除了这些努力之外，用户还应该注意以下性能问题。
+
+## 1. 当日志完全关闭时的日志记录性能
+
+你可以通过将 root logger 的 level 设置为 `Level.OFF` 来完全关闭日志输出。当日志输出完全关闭时，日志语句的成本为：一个方法调用和一个整数比较的成本。在 3.2Ghz 的奔腾D机器上，这一成本通常在20纳秒左右。
+
+然而，任何方法的调用都可能包含一个隐藏的成本：参数构造。例如下面的代码：
+
+```
+x.debug("Entry number: " + i + "is " + entry[i]);
+```
+
+上面的代码，不管日志是否输出都需要承担参数构造的成本，包括：将 Integer i 和 entry[i] 转换为 string 并拼接一个新的 string 的成本。
+
+参数构建的成本可能相当高，这取决于所涉及参数的大小。为了避免参数构建的成本，你可以利用`SLF4J`的参数化日志记录:
+
+```
+x.debug("Entry number: {} is {}", i, entry[i]);
+```
+
+
+这种变体不会产生参数构造的成本。与前面对 `debug()` 方法的调用相比，它的速度要快得多。只有在将日志记录请求发送到 appender 时才会对消息进行格式化。此外，格式化消息的组件经过了高度优化。
+
+尽量不要将上面的代码放到放在紧凑的循环中，即频繁调用的代码。这是一个非常不好的习惯，可能会导致性能下降。即使关闭了日志记录，在紧凑循环中进行日志记录也会降低应用程序的运行速度，如果打开日志记录，则会生成大量(可能是无用的)输出。
+
+## 2.当启用日志时决定是否需要输出日志的性能
+
+在 `logback` 中，不需要遍历 logger 层次结构。当创建 logger 时，logger 知道它的有效级别(也就是说，一旦考虑了级别继承，就知道它的级别)。如果 parent logger 的级别被更改，那么将联系所有子 logger 以注意更改。因此，在接受或拒绝基于有效级别的请求之前，日志记录器可以做出准瞬时决策，而不需要咨询其祖先。
+
+
+## 3.实际日志输出（格式化和要输出的目标设备）
+
+格式化日志输出并将其发送到目标目的地的会花费一定成本。这里，我们再次认真地努力使 layouts (formatters)尽可能快地执行，对于 appenders 也是如此。在本地机器上记录文件时，实际日志记录的典型成本大约是9到12微秒。当将日志记录到远程服务器上的数据库时，它的时间最长可达几毫秒。
+
+
+尽管特性丰富，但logback的首要设计目标之一是执行速度，这是仅次于可靠性的需求。为了提高性能，已经重写了一些 logback 组件。
