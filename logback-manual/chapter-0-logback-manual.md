@@ -20,6 +20,7 @@ ok，言归正传，下面是手册目录：
 - [章节1 ： logback 介绍](chapter-1-introduction.md)
 - [章节2 ： logback 体系结构](chapter-2-architecture.md)
 - [章节3 ： logback 的配置](chapter-3-configuration.md)
+- [章节3 ： logback 配置语法](chapter-3-config-syntax.md)
 - [章节4 ： 关于 Appenders]()
 - [章节5 ： 关于 Encoders]()
 - [章节6 ： 关于 Layouts]()
